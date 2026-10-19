@@ -1,0 +1,1244 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>お菓子テトリス</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mochiy+Pop+One&family=Zen+Maru+Gothic:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  html, body {
+    height: 100%;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow-x: hidden;
+    touch-action: manipulation;
+    background:
+      radial-gradient(circle at 10% 15%, rgba(255,255,255,0.6) 0 6px, transparent 7px),
+      radial-gradient(circle at 80% 25%, rgba(255,255,255,0.6) 0 5px, transparent 6px),
+      radial-gradient(circle at 30% 70%, rgba(255,255,255,0.5) 0 4px, transparent 5px),
+      radial-gradient(circle at 65% 85%, rgba(255,255,255,0.6) 0 6px, transparent 7px),
+      radial-gradient(circle at 90% 60%, rgba(255,255,255,0.5) 0 4px, transparent 5px),
+      linear-gradient(160deg, #ffc9e0 0%, #ffe9b0 50%, #b9ecf5 100%);
+    font-family: "Zen Maru Gothic", "Hiragino Maru Gothic ProN", sans-serif;
+    color: #6b4a35;
+  }
+
+  .game-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    align-items: flex-start;
+    justify-content: center;
+    background: rgba(255,255,255,0.55);
+    padding: 20px;
+    border-radius: 28px;
+    box-shadow: 0 12px 30px rgba(180,120,150,0.25);
+    backdrop-filter: blur(4px);
+    width: 100%;
+    max-width: 640px;
+    margin: 12px;
+  }
+
+  h1 {
+    margin: 0 0 14px;
+    font-family: "Mochiy Pop One", sans-serif;
+    font-size: 24px;
+    letter-spacing: 1px;
+    text-align: center;
+    background: linear-gradient(90deg, #ff6fa3, #ff9ec4, #ffb37a);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(1px 1px 0 #fff) drop-shadow(2px 2px 0 rgba(200,120,150,0.25));
+  }
+
+  .board-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    flex: 1 1 240px;
+    max-width: 320px;
+    min-width: 0;
+  }
+
+  canvas#board {
+    background: #fffaf3;
+    border-radius: 16px;
+    border: 8px solid transparent;
+    border-image: repeating-linear-gradient(45deg, #ff6fa3 0 10px, #ffffff 10px 20px) 8;
+    box-shadow: inset 0 0 12px rgba(200,150,170,0.4);
+    display: block;
+    touch-action: none;
+    max-width: 100%;
+  }
+
+  .side {
+    flex: 1 1 220px;
+    max-width: 280px;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
+    align-content: flex-start;
+  }
+  .side .panel {
+    flex: 1 1 100px;
+  }
+
+  .panel {
+    background: #fff;
+    border-radius: 18px;
+    padding: 14px;
+    box-shadow: 0 4px 10px rgba(200,150,170,0.25);
+    text-align: center;
+  }
+
+  .panel h2 {
+    margin: 0 0 8px;
+    font-family: "Mochiy Pop One", sans-serif;
+    font-size: 13px;
+    font-weight: normal;
+    letter-spacing: 0.5px;
+    color: #d6537d;
+  }
+
+  .panel .value {
+    font-family: "Mochiy Pop One", sans-serif;
+    font-size: 24px;
+    color: #ff8fb3;
+    text-shadow: 1px 1px 0 #fff2f6;
+  }
+
+  canvas#next {
+    background: #fffaf3;
+    border-radius: 12px;
+    border: 4px solid #c8e6f7;
+  }
+
+  .controls {
+    font-size: 12.5px;
+    line-height: 1.8;
+    text-align: left;
+  }
+  .controls h2 {
+    margin: 0 0 8px;
+    font-family: "Mochiy Pop One", sans-serif;
+    font-size: 13px;
+    font-weight: normal;
+    color: #d6537d;
+  }
+
+  button {
+    font-family: "Mochiy Pop One", sans-serif;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+    padding: 10px 16px;
+    border-radius: 999px;
+    border: none;
+    background: linear-gradient(135deg, #ff9ec4, #ffd39e);
+    color: #7a4a35;
+    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(200,120,150,0.35);
+    transition: transform 0.1s ease;
+  }
+  button:active { transform: scale(0.95); }
+
+  .overlay .box button {
+    display: block;
+    margin: 8px auto 0;
+  }
+  .overlay .box button:first-of-type {
+    margin-top: 4px;
+  }
+  .overlay .box button.secondary {
+    background: none;
+    box-shadow: none;
+    color: #b98a8a;
+    font-size: 11px;
+    padding: 6px 12px;
+  }
+
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(255,255,255,0.75);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 16px;
+    z-index: 10;
+  }
+  .overlay.show { display: flex; }
+  .overlay .box {
+    background: #fff;
+    padding: 32px 40px;
+    border-radius: 24px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(180,120,150,0.35);
+  }
+  .overlay .box {
+    min-width: 260px;
+    max-width: 92vw;
+    max-height: 92vh;
+    max-height: 92dvh;
+    overflow-y: auto;
+  }
+  body.is-touch .overlay .box {
+    padding: 22px 20px;
+  }
+  .overlay .box h2 {
+    margin: 0 0 10px;
+    font-family: "Mochiy Pop One", sans-serif;
+    color: #d6537d;
+    font-size: 22px;
+    letter-spacing: 1px;
+  }
+
+  /* --- ランキング --- */
+  #submitArea {
+    display: none;
+    margin: 10px 0 4px;
+  }
+  #nameInput {
+    width: 100%;
+    max-width: 240px;
+    font-family: "Zen Maru Gothic", sans-serif;
+    font-weight: 700;
+    font-size: 16px; /* iOSで入力時に勝手に拡大されないよう16px */
+    color: #6b4a35;
+    text-align: center;
+    padding: 9px 12px;
+    border-radius: 999px;
+    border: 3px solid #ffd0e2;
+    background: #fffaf3;
+    outline: none;
+  }
+  #nameInput:focus { border-color: #ff9ec4; }
+  #submitBtn:disabled { opacity: 0.55; cursor: default; }
+  #submitMsg {
+    min-height: 1.4em;
+    margin: 6px 0 0;
+    font-size: 12.5px;
+    color: #d6537d;
+  }
+  #rankArea {
+    display: none;
+    margin-top: 12px;
+    text-align: left;
+  }
+  #rankArea h3 {
+    margin: 0 0 6px;
+    text-align: center;
+    font-family: "Mochiy Pop One", sans-serif;
+    font-weight: normal;
+    font-size: 14px;
+    color: #d6537d;
+  }
+  #rankList {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    font-size: 14px;
+  }
+  #rankList li {
+    display: grid;
+    grid-template-columns: 2.2em 1fr auto;
+    gap: 6px;
+    align-items: center;
+    padding: 5px 10px;
+    border-radius: 12px;
+  }
+  #rankList li:nth-child(odd) { background: #fff4f8; }
+  #rankList li.me { background: #ffe3a8; font-weight: 700; }
+  #rankList .no {
+    font-family: "Mochiy Pop One", sans-serif;
+    color: #ff8fb3;
+    text-align: center;
+  }
+  #rankList .nm {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  #rankList .sc {
+    font-family: "Mochiy Pop One", sans-serif;
+    color: #d6537d;
+  }
+  #rankStatus {
+    margin: 4px 0 0;
+    text-align: center;
+    font-size: 12.5px;
+    color: #b98a8a;
+  }
+
+  .sweet-fx {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    text-align: center;
+    pointer-events: none;
+    z-index: 5;
+    opacity: 0;
+  }
+  .sweet-fx.pop {
+    animation: sweetPop 1s ease-out forwards;
+  }
+  .sweet-fx .emoji {
+    font-size: 56px;
+    display: block;
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2));
+  }
+  .sweet-fx .label {
+    margin-top: 4px;
+    font-family: "Mochiy Pop One", sans-serif;
+    font-size: 12px;
+    color: #d6537d;
+    background: rgba(255,255,255,0.9);
+    border-radius: 999px;
+    padding: 3px 14px;
+    display: inline-block;
+  }
+
+  .touch-controls {
+    display: none;
+    margin-top: 10px;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+    max-width: 320px;
+  }
+  .touch-row {
+    display: grid;
+    gap: 8px;
+    width: 100%;
+  }
+  .touch-row.dirs {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .touch-row.actions {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .touch-controls button {
+    width: 100%;
+    height: 48px;
+    min-height: 48px;
+    font-size: 20px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+  }
+  .touch-controls .actions button {
+    font-size: 13px;
+  }
+
+  /* タッチ対応端末かどうかはJSで判定してbodyにクラスを付与する
+     (メディアクエリの幅判定は埋め込み表示環境でずれることがあるため) */
+  body.is-touch .game-wrap {
+    flex-direction: column;
+    align-items: center;
+  }
+  body.is-touch .side {
+    width: 100%;
+    max-width: 320px;
+    justify-content: center;
+    gap: 8px;
+  }
+  body.is-touch .side .panel {
+    flex: 1 1 68px;
+    min-width: 68px;
+    padding: 8px;
+  }
+  body.is-touch .side .panel .value {
+    font-size: 18px;
+  }
+  body.is-touch .side #pauseBtn {
+    display: none;
+  }
+  body.is-touch .controls.panel {
+    display: none;
+  }
+  body.is-touch .touch-controls {
+    display: flex;
+  }
+  body.is-touch h1 {
+    font-size: 17px;
+    margin-bottom: 8px;
+  }
+  @keyframes sweetPop {
+    0%   { transform: translate(-50%, -50%) scale(0.2); opacity: 0; }
+    30%  { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+    50%  { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    85%  { transform: translate(-50%, -60%) scale(1); opacity: 1; }
+    100% { transform: translate(-50%, -90%) scale(0.9); opacity: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="game-wrap">
+  <div class="board-area">
+    <h1>🍬 お菓子テトリス 🍭</h1>
+    <canvas id="board" width="280" height="560"></canvas>
+    <div class="sweet-fx" id="sweetFx">
+      <span class="emoji" id="sweetFxEmoji">🍰</span>
+      <span class="label" id="sweetFxLabel">完成!</span>
+    </div>
+    <div class="controls panel" style="margin-top:12px; width: 268px;">
+      <h2>操作方法</h2>
+      ← → : 左右移動<br>
+      ↓ : ソフトドロップ<br>
+      ↑ : 回転<br>
+      スペース : ハードドロップ<br>
+      P : 一時停止
+    </div>
+    <div class="touch-controls">
+      <div class="touch-row dirs">
+        <button id="btnLeft" type="button">⬅️</button>
+        <button id="btnRotate" type="button">🔄</button>
+        <button id="btnRight" type="button">➡️</button>
+        <button id="btnDown" type="button">⬇️</button>
+      </div>
+      <div class="touch-row actions">
+        <button id="btnDrop" type="button">ストン↓</button>
+        <button id="btnPauseTouch" type="button">一時停止</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="side">
+    <div class="panel">
+      <h2>🍯 スコア</h2>
+      <div class="value" id="score">0</div>
+    </div>
+    <div class="panel">
+      <h2>🍭 レベル</h2>
+      <div class="value" id="level">1</div>
+    </div>
+    <div class="panel">
+      <h2>🍬 消した列</h2>
+      <div class="value" id="lines">0</div>
+    </div>
+    <div class="panel">
+      <h2>👀 ネクスト</h2>
+      <canvas id="next" width="100" height="100"></canvas>
+    </div>
+    <button id="pauseBtn">一時停止</button>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="box">
+    <h2 id="overlayTitle">ゲームオーバー</h2>
+    <p id="overlayText">お疲れさまでした!</p>
+    <div id="submitArea">
+      <input id="nameInput" type="text" maxlength="12" placeholder="なまえ(12文字まで)" autocomplete="off">
+      <button id="submitBtn" type="button">ランキングに登録</button>
+      <p id="submitMsg"></p>
+    </div>
+    <div id="rankArea">
+      <h3>🏆 ランキング TOP10</h3>
+      <ol id="rankList"></ol>
+      <p id="rankStatus"></p>
+    </div>
+    <button id="resumeBtn" style="display:none;">再開する</button>
+    <button id="restartBtn">もう一度あそぶ</button>
+    <button id="rankBtn" class="secondary" type="button" style="display:none;">ランキングを見る</button>
+  </div>
+</div>
+
+<script>
+(() => {
+  const COLS = 10, ROWS = 20, CELL = 28;
+  const boardCanvas = document.getElementById('board');
+  const ctx = boardCanvas.getContext('2d');
+  const nextCanvas = document.getElementById('next');
+  const nctx = nextCanvas.getContext('2d');
+  const scoreEl = document.getElementById('score');
+  const levelEl = document.getElementById('level');
+  const linesEl = document.getElementById('lines');
+  const overlay = document.getElementById('overlay');
+  const overlayTitle = document.getElementById('overlayTitle');
+  const overlayText = document.getElementById('overlayText');
+  const pauseBtn = document.getElementById('pauseBtn');
+  const restartBtn = document.getElementById('restartBtn');
+  const resumeBtn = document.getElementById('resumeBtn');
+  const sweetFx = document.getElementById('sweetFx');
+  const sweetFxEmoji = document.getElementById('sweetFxEmoji');
+  const sweetFxLabel = document.getElementById('sweetFxLabel');
+
+  // --- オンラインランキング(Supabase) ---
+  // publishableキーはブラウザに置いてよいキー。secret / service_role は絶対に入れない
+  const SUPABASE_URL = 'https://ujhzmxjkkmncthktocns.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_7bxKrkzmbmSzZX-7ff3QgQ_PKYRRPFS';
+  const SCORES_URL = `${SUPABASE_URL}/rest/v1/scores`;
+  const NAME_STORAGE_KEY = 'okashiTetrisPlayerName';
+
+  const submitArea = document.getElementById('submitArea');
+  const nameInput = document.getElementById('nameInput');
+  const submitBtn = document.getElementById('submitBtn');
+  const submitMsg = document.getElementById('submitMsg');
+  const rankArea = document.getElementById('rankArea');
+  const rankList = document.getElementById('rankList');
+  const rankStatus = document.getElementById('rankStatus');
+  const rankBtn = document.getElementById('rankBtn');
+  let scoreSubmitted = false;
+
+  function fetchWithTimeout(url, options, ms = 8000) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), ms);
+    return fetch(url, { ...options, signal: ctrl.signal }).finally(() => clearTimeout(timer));
+  }
+
+  async function fetchRanking() {
+    const url = `${SCORES_URL}?select=name,score,level&order=score.desc,created_at.asc&limit=10`;
+    const res = await fetchWithTimeout(url, { headers: { apikey: SUPABASE_KEY } });
+    if (!res.ok) throw new Error('ランキング取得に失敗 HTTP ' + res.status);
+    return res.json();
+  }
+
+  async function postScore(name, sc, lv) {
+    const res = await fetchWithTimeout(SCORES_URL, {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_KEY,
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal'
+      },
+      body: JSON.stringify({ name: name, score: sc, level: lv })
+    });
+    if (!res.ok) throw new Error('スコア送信に失敗 HTTP ' + res.status);
+  }
+
+  function renderRanking(rows, mine) {
+    rankList.textContent = '';
+    let marked = false;
+    rows.forEach((row, i) => {
+      const li = document.createElement('li');
+      const no = document.createElement('span');
+      const nm = document.createElement('span');
+      const sc = document.createElement('span');
+      no.className = 'no';
+      nm.className = 'nm';
+      sc.className = 'sc';
+      no.textContent = ['🥇', '🥈', '🥉'][i] || String(i + 1);
+      nm.textContent = row.name;   // textContentなので名前にHTMLが入っても実行されない
+      sc.textContent = row.score;
+      if (mine && !marked && row.name === mine.name && row.score === mine.score) {
+        li.className = 'me';
+        marked = true;
+      }
+      li.append(no, nm, sc);
+      rankList.appendChild(li);
+    });
+  }
+
+  async function showRanking(mine) {
+    rankArea.style.display = 'block';
+    rankList.textContent = '';
+    rankStatus.textContent = 'よみこみ中…';
+    try {
+      const rows = await fetchRanking();
+      renderRanking(rows, mine);
+      rankStatus.textContent = rows.length ? '' : 'まだ記録がありません。1位をねらおう!';
+    } catch (err) {
+      console.error(err);
+      rankStatus.textContent = 'ランキングを取得できませんでした(ゲームは遊べます)';
+    }
+  }
+
+  function loadSavedName() {
+    try { return localStorage.getItem(NAME_STORAGE_KEY) || ''; } catch (e) { return ''; }
+  }
+  function saveName(name) {
+    try { localStorage.setItem(NAME_STORAGE_KEY, name); } catch (e) { /* 保存できなくても続行 */ }
+  }
+
+  submitBtn.addEventListener('click', async () => {
+    if (scoreSubmitted) return;
+    const name = nameInput.value.trim().slice(0, 12);
+    if (!name) {
+      submitMsg.textContent = 'なまえを入れてね';
+      return;
+    }
+    const sc = score, lv = level;   // 送信中に状態が変わっても、ゲームオーバー時の値を送る
+    submitBtn.disabled = true;
+    nameInput.disabled = true;
+    submitMsg.textContent = '送信中…';
+    try {
+      await postScore(name, sc, lv);
+      scoreSubmitted = true;
+      saveName(name);
+      submitMsg.textContent = '登録しました!';
+      showRanking({ name: name, score: sc });
+    } catch (err) {
+      console.error(err);
+      submitBtn.disabled = false;
+      nameInput.disabled = false;
+      submitMsg.textContent = 'うまく送れませんでした。もう一度ためしてね';
+    }
+  });
+
+  nameInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); submitBtn.click(); }
+  });
+
+  rankBtn.addEventListener('click', () => showRanking());
+
+  // タッチ対応端末かどうかを判定してレイアウトを切り替える
+  // (画面幅のメディアクエリは埋め込み表示環境で実際のサイズとずれることがあるため使わない)
+  const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+  if (isTouchDevice) {
+    document.body.classList.add('is-touch');
+  }
+
+  const boardArea = document.querySelector('.board-area');
+  const gameWrap = document.querySelector('.game-wrap');
+
+  // 埋め込み表示環境などでレイアウトが画面幅を超えてしまう場合の保険として、
+  // ゲーム全体をその場でスケールダウンして画面内に収める
+  function forceFitScreen() {
+    gameWrap.style.transform = '';
+    gameWrap.style.marginBottom = '';
+    const rect = gameWrap.getBoundingClientRect();
+    const visibleWidth = document.documentElement.clientWidth;
+    if (rect.width > visibleWidth + 1) {
+      const scale = visibleWidth / rect.width;
+      gameWrap.style.transformOrigin = 'top center';
+      gameWrap.style.transform = `scale(${scale})`;
+      gameWrap.style.marginBottom = `${rect.height * (scale - 1)}px`;
+    }
+  }
+  window.addEventListener('load', () => setTimeout(forceFitScreen, 50));
+  window.addEventListener('resize', forceFitScreen);
+  window.addEventListener('orientationchange', () => setTimeout(forceFitScreen, 200));
+
+  // ボードの実際の表示サイズを、置かれている場所の実測幅と画面の高さから決める
+  function fitBoard() {
+    const containerWidth = boardArea.clientWidth || window.innerWidth;
+    const availWidth = Math.min(containerWidth, 320);
+    const availHeight = Math.max(window.innerHeight * 0.6, 260);
+    let h = availHeight;
+    let w = h / 2; // ボードの縦横比は 1:2 固定
+    if (w > availWidth) {
+      w = availWidth;
+      h = w * 2;
+    }
+    boardCanvas.style.width = Math.round(w) + 'px';
+    boardCanvas.style.height = Math.round(h) + 'px';
+    forceFitScreen();
+  }
+  fitBoard();
+  window.addEventListener('resize', fitBoard);
+  window.addEventListener('orientationchange', () => setTimeout(fitBoard, 150));
+  if (window.ResizeObserver) {
+    new ResizeObserver(fitBoard).observe(boardArea);
+  }
+
+  // 材料ごとに対応する完成お菓子(消えた列の材料の中で一番多いものが選ばれる)
+  const SWEETS_BY_INGREDIENT = {
+    I: [['🍪', 'クッキー'], ['🥞', 'パンケーキ']],
+    O: [['🍮', 'プリン'], ['🍳', 'カステラ']],
+    T: [['🥛', 'ミルクプリン'], ['🍯', 'はちみつパン']],
+    S: [['🍬', 'キャンディ'], ['🍭', 'ロリポップ']],
+    Z: [['🧈', 'バタークッキー'], ['🥐', 'クロワッサン']],
+    J: [['🍫', '板チョコ'], ['🍩', 'チョコドーナツ']],
+    L: [['🍰', 'ショートケーキ'], ['🧁', 'カップケーキ']],
+    CHERRY: [['🍨', 'チェリーパフェ']],
+    NUT: [['🍪', 'ナッツクッキー']],
+    SPRINKLE: [['🍩', 'スプレードーナツ']]
+  };
+  let sweetFxTimer = null;
+
+  function showSweetFx(clearedCount, clearedRows) {
+    // 消えた行に含まれていた材料の種類を数える
+    const tally = {};
+    for (const row of clearedRows) {
+      for (const cell of row) {
+        if (!cell) continue;
+        tally[cell.type] = (tally[cell.type] || 0) + 1;
+      }
+    }
+    let bestTypes = [];
+    let bestCount = 0;
+    for (const t in tally) {
+      if (tally[t] > bestCount) {
+        bestCount = tally[t];
+        bestTypes = [t];
+      } else if (tally[t] === bestCount) {
+        bestTypes.push(t);
+      }
+    }
+    const dominant = bestTypes[Math.floor(Math.random() * bestTypes.length)] || 'I';
+    const options = SWEETS_BY_INGREDIENT[dominant] || SWEETS_BY_INGREDIENT.I;
+    const [emoji, label] = options[Math.floor(Math.random() * options.length)];
+    const bonus = clearedCount >= 4 ? '(テトリス!豪華に!)' : '';
+    sweetFxEmoji.textContent = emoji;
+    sweetFxLabel.textContent = `${label} 完成!${bonus}`;
+    sweetFx.classList.remove('pop');
+    // 再生し直すためにリフロー
+    void sweetFx.offsetWidth;
+    sweetFx.classList.add('pop');
+    if (sweetFxTimer) clearTimeout(sweetFxTimer);
+    sweetFxTimer = setTimeout(() => sweetFx.classList.remove('pop'), 1000);
+  }
+
+  // お菓子の材料デザイン(同じ形でも色々な材料バリエーションが出る)
+  const VARIANTS = {
+    I: [
+      { kind: 'flour', bag: '#f4ead0', bagDark: '#e6d6a3', text: '#a8874a', label: '粉', fill: '#fdf6e3', stroke: '#d8c48a' }, // 小麦粉
+      { kind: 'flour', bag: '#d9f2d0', bagDark: '#bfe6b0', text: '#4a8a3a', label: '茶', fill: '#eafbe0', stroke: '#b8dba0' }  // 抹茶パウダー
+    ],
+    O: [
+      { emoji: '🥚', fill: '#fff4d1', stroke: '#e0c168' }, // 卵
+      { emoji: '🍳', fill: '#fff4d1', stroke: '#e0c168' }  // 目玉焼き(気分転換)
+    ],
+    T: [
+      { emoji: '🥛', fill: '#eef6ff', stroke: '#a9c9e6' }, // 牛乳
+      { emoji: '🍯', fill: '#fff2d0', stroke: '#e0bd6a' }  // はちみつ
+    ],
+    S: [
+      { kind: 'sugar', cube: '#ffffff', cubeStroke: '#dcdcdc', fill: '#ffffff', stroke: '#d9d9d9' },        // 白砂糖
+      { kind: 'sugar', cube: '#d9a35c', cubeStroke: '#b97f34', fill: '#fff3e0', stroke: '#e0b98a' }         // 黒糖
+    ],
+    Z: [
+      { emoji: '🧈', fill: '#fff6cf', stroke: '#e0c34d' } // バター
+    ],
+    J: [
+      { emoji: '🍫', fill: '#e8d2c0', stroke: '#9c6a45' } // チョコレート
+    ],
+    L: [
+      { kind: 'cream', cream: '#fffdf6', creamStroke: '#f0dfc0', fill: '#fffaf3', stroke: '#f0d9c0' },  // 生クリーム
+      { kind: 'cream', cream: '#ffd9e6', creamStroke: '#e6a8c0', fill: '#fff0f5', stroke: '#f0c0d0' }   // いちごクリーム
+    ],
+    CHERRY: [
+      { emoji: '🍒', fill: '#ffe3ea', stroke: '#e0728f' } // さくらんぼ(トッピング)
+    ],
+    NUT: [
+      { emoji: '🌰', fill: '#f0dcc0', stroke: '#b98a55' } // ナッツ(トッピング)
+    ],
+    SPRINKLE: [
+      { emoji: '🌈', fill: '#fdeaff', stroke: '#c98ae0' } // カラースプレー(トッピング)
+    ]
+  };
+
+  function randomVariant(type) {
+    const opts = VARIANTS[type];
+    return Math.floor(Math.random() * opts.length);
+  }
+
+  const SHAPES = {
+    I: [[0,0],[1,0],[2,0],[3,0]],
+    O: [[0,0],[1,0],[0,1],[1,1]],
+    T: [[0,0],[1,0],[2,0],[1,1]],
+    S: [[1,0],[2,0],[0,1],[1,1]],
+    Z: [[0,0],[1,0],[1,1],[2,1]],
+    J: [[0,0],[0,1],[1,1],[2,1]],
+    L: [[2,0],[0,1],[1,1],[2,1]],
+    // 特別なトッピングブロック(たまに登場)
+    CHERRY: [[1,0],[0,1],[1,1],[2,1],[1,2]],   // 十字型:さくらんぼ
+    NUT: [[0,0],[1,0],[2,0],[1,1],[1,2]],      // T型5マス:ナッツ
+    SPRINKLE: [[0,0],[0,1],[1,1],[1,2],[2,2]]  // 階段型:スプレッドチョコ
+  };
+
+  const STANDARD_TYPES = ['I', 'O', 'T', 'S', 'Z', 'J', 'L'];
+  const SPECIAL_TYPES = ['CHERRY', 'NUT', 'SPRINKLE'];
+
+  function rotate(cells) {
+    // 4x4グリッド基準の単純回転(中心付近で回す)
+    const size = 4;
+    return cells.map(([x, y]) => [y, size - 1 - x]);
+  }
+
+  function normalize(cells) {
+    const minX = Math.min(...cells.map(c => c[0]));
+    const minY = Math.min(...cells.map(c => c[1]));
+    return cells.map(([x, y]) => [x - minX, y - minY]);
+  }
+
+  function randomType() {
+    // 85%は定番の7種、15%で特別なトッピングブロックが登場
+    if (Math.random() < 0.15) {
+      return SPECIAL_TYPES[Math.floor(Math.random() * SPECIAL_TYPES.length)];
+    }
+    return STANDARD_TYPES[Math.floor(Math.random() * STANDARD_TYPES.length)];
+  }
+
+  function newPiece(type) {
+    return {
+      type,
+      variant: randomVariant(type),
+      cells: SHAPES[type].map(c => [...c]),
+      x: 3,
+      y: 0
+    };
+  }
+
+  let grid, current, next, score, level, lines, dropInterval, dropTimer, gameOver, paused, rafId, lastTime;
+
+  function initGame() {
+    grid = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
+    current = newPiece(randomType());
+    next = newPiece(randomType());
+    score = 0;
+    level = 1;
+    lines = 0;
+    dropInterval = 800;
+    dropTimer = 0;
+    gameOver = false;
+    paused = false;
+    lastTime = 0;
+    updateUI();
+    overlay.classList.remove('show');
+    scoreSubmitted = false;
+    submitArea.style.display = 'none';
+    rankArea.style.display = 'none';
+    rankBtn.style.display = 'none';
+    pauseBtn.textContent = '一時停止';
+    resumeBtn.style.display = 'none';
+    restartBtn.style.display = 'inline-block';
+    restartBtn.textContent = 'もう一度あそぶ';
+    restartBtn.classList.remove('secondary');
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = requestAnimationFrame(loop);
+  }
+
+  function updateUI() {
+    scoreEl.textContent = score;
+    levelEl.textContent = level;
+    linesEl.textContent = lines;
+  }
+
+  function collides(cells, offX, offY) {
+    for (const [cx, cy] of cells) {
+      const x = cx + current.x + offX;
+      const y = cy + current.y + offY;
+      if (x < 0 || x >= COLS || y >= ROWS) return true;
+      if (y >= 0 && grid[y][x]) return true;
+    }
+    return false;
+  }
+
+  function lockPiece() {
+    for (const [cx, cy] of current.cells) {
+      const x = cx + current.x;
+      const y = cy + current.y;
+      if (y < 0) {
+        triggerGameOver();
+        return;
+      }
+      grid[y][x] = { type: current.type, variant: current.variant };
+    }
+    clearLines();
+    current = next;
+    next = newPiece(randomType());
+    if (collides(current.cells, 0, 0)) {
+      triggerGameOver();
+    }
+  }
+
+  function clearLines() {
+    let cleared = 0;
+    const clearedRows = [];
+    for (let y = ROWS - 1; y >= 0; y--) {
+      if (grid[y].every(cell => cell)) {
+        clearedRows.push(grid[y].slice());
+        grid.splice(y, 1);
+        grid.unshift(Array(COLS).fill(null));
+        cleared++;
+        y++;
+      }
+    }
+    if (cleared > 0) {
+      const points = [0, 100, 300, 500, 800][cleared] * level;
+      score += points;
+      lines += cleared;
+      const newLevel = Math.floor(lines / 10) + 1;
+      if (newLevel !== level) {
+        level = newLevel;
+        dropInterval = Math.max(120, 800 - (level - 1) * 70);
+      }
+      updateUI();
+      showSweetFx(cleared, clearedRows);
+    }
+  }
+
+  function triggerGameOver() {
+    gameOver = true;
+    overlayTitle.textContent = 'ゲームオーバー';
+    overlayText.textContent = `スコア: ${score} / レベル: ${level}`;
+    resumeBtn.style.display = 'none';
+    restartBtn.style.display = 'inline-block';
+    restartBtn.textContent = 'もう一度あそぶ';
+    restartBtn.classList.remove('secondary');
+    rankBtn.style.display = 'none';
+    scoreSubmitted = false;
+    if (score > 0) {
+      nameInput.value = loadSavedName();
+      nameInput.disabled = false;
+      submitBtn.disabled = false;
+      submitMsg.textContent = '';
+      submitArea.style.display = 'block';
+    } else {
+      submitArea.style.display = 'none';
+    }
+    overlay.classList.add('show');
+    showRanking();
+  }
+
+  function move(dx) {
+    if (!collides(current.cells, dx, 0)) current.x += dx;
+  }
+
+  function softDrop() {
+    if (!collides(current.cells, 0, 1)) {
+      current.y += 1;
+      score += 1;
+      updateUI();
+    } else {
+      lockPiece();
+    }
+  }
+
+  function hardDrop() {
+    while (!collides(current.cells, 0, 1)) {
+      current.y += 1;
+      score += 2;
+    }
+    lockPiece();
+    updateUI();
+  }
+
+  function tryRotate() {
+    const rotated = normalize(rotate(current.cells));
+    const kicks = [0, -1, 1, -2, 2];
+    for (const k of kicks) {
+      if (!collides(rotated, k, 0)) {
+        current.cells = rotated;
+        current.x += k;
+        return;
+      }
+    }
+  }
+
+  function drawCandyCell(c, x, y, size, cellData) {
+    const info = VARIANTS[cellData.type][cellData.variant];
+    const px = x * size, py = y * size, s = size - 2;
+    const cx = px + s / 2, cy = py + s / 2;
+    const r = s / 2 - 1;
+
+    // ぷっくりしたグミ/キャンディ本体(角丸を大きくして丸っこく)
+    c.save();
+    c.beginPath();
+    const rr = s * 0.4;
+    c.moveTo(px + rr, py);
+    c.arcTo(px + s, py, px + s, py + s, rr);
+    c.arcTo(px + s, py + s, px, py + s, rr);
+    c.arcTo(px, py + s, px, py, rr);
+    c.arcTo(px, py, px + s, py, rr);
+    c.closePath();
+    c.clip();
+
+    // ベースの塗り(少しグラデーションでぷるぷる感)
+    const grad = c.createRadialGradient(cx - r * 0.3, cy - r * 0.3, r * 0.1, cx, cy, r * 1.3);
+    grad.addColorStop(0, '#ffffff');
+    grad.addColorStop(0.25, info.fill);
+    grad.addColorStop(1, info.stroke);
+    c.fillStyle = grad;
+    c.fillRect(px, py, s, s);
+
+    // キャンディの渦巻き模様(斜めストライプ)
+    c.globalAlpha = 0.25;
+    c.strokeStyle = '#ffffff';
+    c.lineWidth = s * 0.16;
+    for (let i = -2; i <= 2; i++) {
+      c.beginPath();
+      c.moveTo(px - s + i * s * 0.5, py + s * 1.5);
+      c.lineTo(px + s * 1.5 + i * s * 0.5, py - s * 0.5);
+      c.stroke();
+    }
+    c.globalAlpha = 1;
+    c.restore();
+
+    // 外枠
+    c.strokeStyle = info.stroke;
+    c.lineWidth = 2;
+    c.beginPath();
+    c.moveTo(px + rr, py);
+    c.arcTo(px + s, py, px + s, py + s, rr);
+    c.arcTo(px + s, py + s, px, py + s, rr);
+    c.arcTo(px, py + s, px, py, rr);
+    c.arcTo(px, py, px + s, py, rr);
+    c.closePath();
+    c.stroke();
+
+    // 光沢ハイライト
+    c.fillStyle = 'rgba(255,255,255,0.7)';
+    c.beginPath();
+    c.ellipse(px + s * 0.32, py + s * 0.28, s * 0.16, s * 0.09, -0.4, 0, Math.PI * 2);
+    c.fill();
+
+    // 絵文字またはカスタムイラストを中央に重ねてお菓子感アップ
+    if (info.kind) {
+      drawIngredient(c, info, px, py, s);
+    } else {
+      c.font = `${Math.floor(s * 0.62)}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;
+      c.textAlign = 'center';
+      c.textBaseline = 'middle';
+      c.fillText(info.emoji, cx, cy + s * 0.03);
+    }
+  }
+
+  function drawIngredient(c, info, px, py, s) {
+    const cx = px + s / 2, cy = py + s / 2;
+    const kind = info.kind;
+    if (kind === 'flour') {
+      // 粉袋
+      const w = s * 0.5, h = s * 0.56;
+      c.fillStyle = info.bag;
+      c.strokeStyle = info.bagDark;
+      c.lineWidth = Math.max(1, s * 0.03);
+      c.beginPath();
+      c.roundRect(cx - w / 2, cy - h / 2, w, h, s * 0.08);
+      c.fill();
+      c.stroke();
+      // 袋の口(折り返し)
+      c.fillStyle = info.bagDark;
+      c.fillRect(cx - w / 2, cy - h / 2, w, h * 0.18);
+      // 粉こぼれ(周りの粉塵)
+      c.fillStyle = 'rgba(255,255,255,0.85)';
+      for (const [dx, dy, r] of [[-0.35,0.42,0.05],[0.32,0.45,0.06],[0,0.5,0.045],[0.4,0.3,0.04]]) {
+        c.beginPath();
+        c.arc(cx + dx * s, cy + dy * s, r * s, 0, Math.PI * 2);
+        c.fill();
+      }
+      // 文字
+      c.fillStyle = info.text;
+      c.font = `bold ${Math.floor(s * 0.16)}px sans-serif`;
+      c.textAlign = 'center';
+      c.textBaseline = 'middle';
+      c.fillText(info.label, cx, cy + h * 0.08);
+    } else if (kind === 'sugar') {
+      // 角砂糖を積んだ様子
+      const cube = s * 0.32;
+      c.fillStyle = info.cube;
+      c.strokeStyle = info.cubeStroke;
+      c.lineWidth = Math.max(1, s * 0.025);
+      const positions = [[-0.2, 0.12], [0.2, 0.12], [0, -0.15]];
+      for (const [dx, dy] of positions) {
+        c.save();
+        c.translate(cx + dx * s, cy + dy * s);
+        c.beginPath();
+        c.roundRect(-cube / 2, -cube / 2, cube, cube, cube * 0.15);
+        c.fill();
+        c.stroke();
+        c.restore();
+      }
+      // キラッと光る
+      c.fillStyle = 'rgba(255,255,255,0.9)';
+      c.beginPath();
+      c.arc(cx + 0.05 * s, cy - 0.2 * s, s * 0.03, 0, Math.PI * 2);
+      c.fill();
+    } else if (kind === 'cream') {
+      // 生クリームの絞り(段々に重なるソフトクリーム風)
+      c.fillStyle = info.cream;
+      c.strokeStyle = info.creamStroke;
+      c.lineWidth = Math.max(1, s * 0.025);
+
+      const layers = [
+        { w: s * 0.62, h: s * 0.30, dy: s * 0.28 }, // 一番下(いちばん幅広)
+        { w: s * 0.46, h: s * 0.24, dy: s * 0.05 }, // 真ん中
+        { w: s * 0.30, h: s * 0.18, dy: -s * 0.16 } // 上のほう
+      ];
+      for (const layer of layers) {
+        c.beginPath();
+        c.ellipse(cx, cy + layer.dy, layer.w / 2, layer.h / 2, 0, 0, Math.PI * 2);
+        c.fill();
+        c.stroke();
+        // 段ごとのリボン状の絞り線
+        c.beginPath();
+        c.arc(cx, cy + layer.dy - layer.h * 0.15, layer.w * 0.32, Math.PI * 0.15, Math.PI * 0.85);
+        c.stroke();
+      }
+      // 先端の小さな渦(くるん)
+      c.beginPath();
+      c.arc(cx, cy - s * 0.32, s * 0.07, 0, Math.PI * 1.6);
+      c.stroke();
+    }
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, boardCanvas.width, boardCanvas.height);
+    // グリッド背景
+    ctx.strokeStyle = '#f5e6ee';
+    for (let x = 0; x <= COLS; x++) {
+      ctx.beginPath();
+      ctx.moveTo(x * CELL, 0);
+      ctx.lineTo(x * CELL, ROWS * CELL);
+      ctx.stroke();
+    }
+    for (let y = 0; y <= ROWS; y++) {
+      ctx.beginPath();
+      ctx.moveTo(0, y * CELL);
+      ctx.lineTo(COLS * CELL, y * CELL);
+      ctx.stroke();
+    }
+
+    for (let y = 0; y < ROWS; y++) {
+      for (let x = 0; x < COLS; x++) {
+        if (grid[y][x]) drawCandyCell(ctx, x, y, CELL, grid[y][x]);
+      }
+    }
+
+    for (const [cx, cy] of current.cells) {
+      const x = cx + current.x, y = cy + current.y;
+      if (y >= 0) drawCandyCell(ctx, x, y, CELL, { type: current.type, variant: current.variant });
+    }
+
+    // ネクスト表示
+    nctx.clearRect(0, 0, nextCanvas.width, nextCanvas.height);
+    const size = 22;
+    const cells = normalize(next.cells);
+    const offX = (100 - Math.max(...cells.map(c => c[0])) * size - size) / 2;
+    const offY = (100 - Math.max(...cells.map(c => c[1])) * size - size) / 2;
+    nctx.save();
+    nctx.translate(offX, offY);
+    for (const [cx, cy] of cells) {
+      drawCandyCell(nctx, cx, cy, size, { type: next.type, variant: next.variant });
+    }
+    nctx.restore();
+  }
+
+  function loop(time) {
+    if (!gameOver && !paused) {
+      const delta = time - lastTime;
+      lastTime = time;
+      dropTimer += delta;
+      if (dropTimer > dropInterval) {
+        dropTimer = 0;
+        if (!collides(current.cells, 0, 1)) {
+          current.y += 1;
+        } else {
+          lockPiece();
+        }
+      }
+      draw();
+    } else {
+      lastTime = time;
+    }
+    rafId = requestAnimationFrame(loop);
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (gameOver) return;
+    if (e.key === 'p' || e.key === 'P') {
+      togglePause();
+      return;
+    }
+    if (paused) return;
+    switch (e.key) {
+      case 'ArrowLeft': move(-1); break;
+      case 'ArrowRight': move(1); break;
+      case 'ArrowDown': softDrop(); break;
+      case 'ArrowUp': tryRotate(); break;
+      case ' ': e.preventDefault(); hardDrop(); break;
+    }
+    draw();
+  });
+
+  function togglePause() {
+    if (gameOver) return;
+    paused = !paused;
+    pauseBtn.textContent = paused ? '再開する' : '一時停止';
+    if (document.getElementById('btnPauseTouch')) {
+      document.getElementById('btnPauseTouch').textContent = paused ? '再開する' : '一時停止';
+    }
+    if (paused) {
+      overlayTitle.textContent = '一時停止中';
+      overlayText.textContent = isTouchDevice ? '下の「再開する」を押してね' : '再開するにはボタンを押すか P キー';
+      resumeBtn.style.display = 'inline-block';
+      restartBtn.style.display = 'inline-block';
+      restartBtn.textContent = '最初から';
+      restartBtn.classList.add('secondary');
+      rankBtn.style.display = 'inline-block';
+      overlay.classList.add('show');
+    } else {
+      overlay.classList.remove('show');
+      rankArea.style.display = 'none';
+      rankBtn.style.display = 'none';
+    }
+  }
+
+  pauseBtn.addEventListener('click', togglePause);
+  restartBtn.addEventListener('click', () => {
+    if (paused && score > 0) {
+      if (!confirm('今のスコアは消えますが、最初からやり直しますか?')) return;
+    }
+    initGame();
+  });
+  resumeBtn.addEventListener('click', togglePause);
+
+  // --- スマホ用タッチ操作ボタン ---
+  const btnLeft = document.getElementById('btnLeft');
+  const btnRight = document.getElementById('btnRight');
+  const btnDown = document.getElementById('btnDown');
+  const btnRotate = document.getElementById('btnRotate');
+  const btnDrop = document.getElementById('btnDrop');
+  const btnPauseTouch = document.getElementById('btnPauseTouch');
+
+  function safeAction(fn) {
+    if (gameOver || paused) return;
+    fn();
+    draw();
+  }
+
+  function bindHold(el, fn, repeatMs) {
+    let interval = null;
+    const start = (e) => {
+      e.preventDefault();
+      safeAction(fn);
+      if (repeatMs) {
+        interval = setInterval(() => safeAction(fn), repeatMs);
+      }
+    };
+    const stop = () => {
+      if (interval) { clearInterval(interval); interval = null; }
+    };
+    el.addEventListener('touchstart', start, { passive: false });
+    el.addEventListener('touchend', stop);
+    el.addEventListener('touchcancel', stop);
+    el.addEventListener('mousedown', start);
+    el.addEventListener('mouseup', stop);
+    el.addEventListener('mouseleave', stop);
+  }
+
+  bindHold(btnLeft, () => move(-1), 150);
+  bindHold(btnRight, () => move(1), 150);
+  bindHold(btnDown, () => softDrop(), 100);
+  btnRotate.addEventListener('touchstart', (e) => { e.preventDefault(); safeAction(tryRotate); });
+  btnRotate.addEventListener('click', () => safeAction(tryRotate));
+  btnDrop.addEventListener('touchstart', (e) => { e.preventDefault(); safeAction(hardDrop); });
+  btnDrop.addEventListener('click', () => safeAction(hardDrop));
+  btnPauseTouch.addEventListener('click', togglePause);
+
+  initGame();
+})();
+</script>
+</body>
+</html>
